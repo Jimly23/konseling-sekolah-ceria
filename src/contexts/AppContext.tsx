@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { studentAccounts } from '../data/accounts';
 
 export interface Student {
   username: string;
@@ -110,7 +111,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setStudents(JSON.parse(savedStudents));
     } else {
       // Initialize with default students from accounts.ts
-      const { studentAccounts } = require('../data/accounts');
       setStudents(studentAccounts);
       localStorage.setItem('students', JSON.stringify(studentAccounts));
     }
