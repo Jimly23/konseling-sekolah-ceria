@@ -55,9 +55,61 @@ const KuisionerMinat = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [isCompleted, setIsCompleted] = useState(false);
+  const [results, setResults] = useState<any>(null);
   const { toast } = useToast();
 
   const progress = ((currentQuestion + 1) / questions.length) * 100;
+
+  const calculateResults = () => {
+    const categoryScores: Record<string, number> = {};
+    
+    // Initialize all categories
+    questions.forEach(q => {
+      if (!categoryScores[q.category]) {
+        categoryScores[q.category] = 0;
+      }
+    });
+
+    // Calculate scores based on answers
+    Object.entries(answers).forEach(([questionId, answer]) => {
+      const question = questions.find(q => q.id === parseInt(questionId));
+      if (question) {
+        let score = 0;
+        switch (answer) {
+          case 'sangat_tidak_setuju': score = 1; break;
+          case 'tidak_setuju': score = 2; break;
+          case 'netral': score = 3; break;
+          case 'setuju': score = 4; break;
+          case 'sangat_setuju': score = 5; break;
+        }
+        categoryScores[question.category] += score;
+      }
+    });
+
+    // Find top interests
+    const sortedCategories = Object.entries(categoryScores)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 3);
+
+    const recommendations = {
+      'Analitis': ['Akuntansi', 'Data Analyst', 'Statistisi', 'Peneliti'],
+      'Sosial': ['Konselor', 'Pekerja Sosial', 'Guru', 'Psikolog'],
+      'Kreatif': ['Desainer Grafis', 'Seniman', 'Penulis', 'Fotografer'],
+      'Teknis': ['Programmer', 'Teknisi', 'Insinyur', 'IT Support'],
+      'Investigatif': ['Ilmuwan', 'Dokter', 'Peneliti', 'Detektif'],
+      'Kepemimpinan': ['Manajer', 'Entrepreneur', 'Direktur', 'Supervisor'],
+      'Realistik': ['Petani', 'Teknisi Mesin', 'Tukang Kayu', 'Pilot'],
+      'Komunikasi': ['Presenter', 'Public Relations', 'Sales', 'Jurnalis']
+    };
+
+    return {
+      topInterests: sortedCategories,
+      recommendations: sortedCategories.map(([category]) => ({
+        category,
+        careers: recommendations[category] || []
+      }))
+    };
+  };
 
   const handleAnswer = (value: string) => {
     setAnswers({ ...answers, [questions[currentQuestion].id]: value });
@@ -78,28 +130,75 @@ const KuisionerMinat = () => {
   };
 
   const completeQuestionnaire = () => {
+    const analysisResults = calculateResults();
+    setResults(analysisResults);
     setIsCompleted(true);
     toast({
       title: "Kuisioner Selesai",
-      description: "Hasil kuisioner minat Anda telah disimpan",
+      description: "Hasil analisis minat Anda telah selesai!",
     });
   };
 
-  if (isCompleted) {
+  if (isCompleted && results) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-blue-100 p-4">
-        <div className="container mx-auto max-w-2xl">
+        <div className="container mx-auto max-w-4xl">
           <Card>
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl text-green-600">Kuisioner Selesai!</CardTitle>
+              <CardTitle className="text-2xl text-green-600">Hasil Analisis Minat</CardTitle>
               <CardDescription>
-                Terima kasih telah mengisi kuisioner minat. Hasil akan dianalisis oleh Guru BK.
+                Berikut adalah hasil analisis berdasarkan jawaban Anda
               </CardDescription>
             </CardHeader>
-            <CardContent className="text-center">
-              <Button onClick={() => window.history.back()}>
-                Kembali ke Dashboard
-              </Button>
+            <CardContent className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Minat Tertinggi Anda:</h3>
+                <div className="grid gap-4">
+                  {results.topInterests.map(([category, score], index) => (
+                    <div key={category} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
+                          {index + 1}
+                        </div>
+                        <span className="font-medium">{category}</span>
+                      </div>
+                      <div className="text-sm text-gray-600">Skor: {score}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Rekomendasi Karir:</h3>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {results.recommendations.map(({ category, careers }) => (
+                    <div key={category} className="p-4 border rounded-lg">
+                      <h4 className="font-semibold text-blue-600 mb-2">{category}</h4>
+                      <ul className="space-y-1">
+                        {careers.map(career => (
+                          <li key={career} className="text-sm text-gray-700">• {career}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-800 mb-2">Saran untuk Pengembangan:</h3>
+                <ul className="text-sm text-blue-700 space-y-1">
+                  <li>• Fokuskan pengembangan diri pada bidang minat tertinggi Anda</li>
+                  <li>• Cari pengalaman melalui magang atau kegiatan ekstrakurikuler terkait</li>
+                  <li>• Konsultasikan dengan guru BK untuk panduan lebih lanjut</li>
+                  <li>• Ikuti kursus atau pelatihan yang mendukung minat Anda</li>
+                </ul>
+              </div>
+
+              <div className="text-center">
+                <Button onClick={() => window.history.back()}>
+                  Kembali ke Dashboard
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
