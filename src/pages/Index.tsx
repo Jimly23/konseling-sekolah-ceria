@@ -4,18 +4,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Heart, Users, TrendingUp, MessageCircle, Calendar, FileText, BarChart3 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BookOpen, Heart, Users, TrendingUp, MessageCircle, Calendar, FileText, BarChart3, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { validateLogin } from "@/data/accounts";
 import { useNavigate } from "react-router-dom";
+import { useApp } from "@/contexts/AppContext";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 import CounselingRequestForm from "@/components/CounselingRequestForm";
+import StudentManagement from "@/components/StudentManagement";
+import CounselingResults from "@/components/CounselingResults";
 
 const Index = () => {
-  const [loginType, setLoginType] = useState<"siswa" | "guru" | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState<"siswa" | "guru" | null>(null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { isLoggedIn, userRole, currentUser, login, logout, counselingRequests, counselingSessions, students, updateRequestStatus } = useApp();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -23,9 +25,7 @@ const Index = () => {
     const user = validateLogin(username, password, role);
     
     if (user) {
-      setIsLoggedIn(true);
-      setUserRole(role);
-      setCurrentUser(user);
+      login(user, role);
       toast({
         title: "Login Berhasil",
         description: `Selamat datang, ${user.nama}!`,
@@ -40,9 +40,7 @@ const Index = () => {
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
-    setUserRole(null);
-    setCurrentUser(null);
+    logout();
     toast({
       title: "Logout Berhasil",
       description: "Anda telah keluar dari sistem",
@@ -252,12 +250,8 @@ const LoginDialog = ({
 };
 
 const SiswaDashboard = ({ onLogout, user, navigate }: { onLogout: () => void; user: any; navigate: any }) => {
-  const [selectedService, setSelectedService] = useState<string>("");
-  const { toast } = useToast();
-
-  const handleServiceRequest = (serviceType: string) => {
-    setSelectedService(serviceType);
-  };
+  const { counselingSessions } = useApp();
+  const userSessions = counselingSessions.filter(session => session.studentUsername === user.username);
 
   const handleMaterialClick = (materialId: string) => {
     navigate(`/material/${materialId}`);
@@ -338,14 +332,19 @@ const SiswaDashboard = ({ onLogout, user, navigate }: { onLogout: () => void; us
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <p className="font-medium text-sm">Konseling Pribadi</p>
-                  <p className="text-xs text-gray-600">Senin, 4 Des 2024 - 10:00</p>
-                </div>
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <p className="font-medium text-sm">Self Assessment</p>
-                  <p className="text-xs text-gray-600">Rabu, 6 Des 2024 - 14:00</p>
-                </div>
+                {userSessions.length > 0 ? (
+                  userSessions.map((session) => (
+                    <div key={session.id} className="p-3 bg-blue-50 rounded-lg">
+                      <p className="font-medium text-sm">{session.serviceType}</p>
+                      <p className="text-xs text-gray-600">
+                        {format(new Date(session.scheduledDate), 'EEEE, dd MMM yyyy', { locale: id })} - {session.scheduledTime}
+                      </p>
+                      <p className="text-xs text-blue-600 capitalize">{session.status}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">Belum ada jadwal sesi</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -435,18 +434,26 @@ const SiswaDashboard = ({ onLogout, user, navigate }: { onLogout: () => void; us
 };
 
 const GuruBKDashboard = ({ onLogout, user }: { onLogout: () => void; user: any }) => {
-  const [requests] = useState([
-    { id: 1, nama: "Ahmad Fauzi", kelas: "XI IPA 1", jenis: "Pribadi", status: "Menunggu", tanggal: "2024-12-01" },
-    { id: 2, nama: "Siti Nurhaliza", kelas: "X IPS 2", jenis: "Sosial", status: "Disetujui", tanggal: "2024-12-02" },
-    { id: 3, nama: "Budi Santoso", kelas: "XII IPA 3", jenis: "Karier", status: "Menunggu", tanggal: "2024-12-03" },
-  ]);
-
+  const { counselingRequests, counselingSessions, students, updateRequestStatus } = useApp();
   const { toast } = useToast();
 
-  const handleApproveRequest = (id: number) => {
+  const pendingRequests = counselingRequests.filter(req => req.status === 'menunggu');
+  const activeSessions = counselingSessions.filter(session => session.status !== 'selesai');
+  const totalCases = counselingRequests.length;
+
+  const handleApproveRequest = (requestId: string) => {
+    updateRequestStatus(requestId, 'disetujui');
     toast({
       title: "Permintaan Disetujui",
       description: "Permintaan konseling telah disetujui dan dijadwalkan",
+    });
+  };
+
+  const handleRejectRequest = (requestId: string) => {
+    updateRequestStatus(requestId, 'ditolak');
+    toast({
+      title: "Permintaan Ditolak",
+      description: "Permintaan konseling telah ditolak",
     });
   };
 
@@ -465,120 +472,155 @@ const GuruBKDashboard = ({ onLogout, user }: { onLogout: () => void; user: any }
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Statistik */}
-          <div className="lg:col-span-3 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Users className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">24</p>
-                    <p className="text-xs text-gray-600">Total Siswa</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                    <MessageCircle className="h-4 w-4 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">8</p>
-                    <p className="text-xs text-gray-600">Sesi Aktif</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                    <Calendar className="h-4 w-4 text-yellow-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">3</p>
-                    <p className="text-xs text-gray-600">Permintaan Baru</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <BarChart3 className="h-4 w-4 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">156</p>
-                    <p className="text-xs text-gray-600">Total Kasus</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Dashboard</TabsTrigger>
+            <TabsTrigger value="students">Data Siswa</TabsTrigger>
+            <TabsTrigger value="sessions">Sesi Konseling</TabsTrigger>
+            <TabsTrigger value="results">Hasil Konseling</TabsTrigger>
+          </TabsList>
 
-          {/* Permintaan Layanan */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Permintaan Layanan Konseling</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {requests.map((request) => (
-                  <div key={request.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <TabsContent value="overview" className="space-y-6">
+            {/* Statistik */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Users className="h-4 w-4 text-blue-600" />
+                    </div>
                     <div>
-                      <p className="font-medium">{request.nama}</p>
-                      <p className="text-sm text-gray-600">{request.kelas} • {request.jenis}</p>
-                      <p className="text-xs text-gray-500">{request.tanggal}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        request.status === "Menunggu" 
-                          ? "bg-yellow-100 text-yellow-800" 
-                          : "bg-green-100 text-green-800"
-                      }`}>
-                        {request.status}
-                      </span>
-                      {request.status === "Menunggu" && (
-                        <Button size="sm" onClick={() => handleApproveRequest(request.id)}>
-                          Setujui
-                        </Button>
-                      )}
+                      <p className="text-2xl font-bold">{students.length}</p>
+                      <p className="text-xs text-gray-600">Total Siswa</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                      <MessageCircle className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{activeSessions.length}</p>
+                      <p className="text-xs text-gray-600">Sesi Aktif</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                      <Calendar className="h-4 w-4 text-yellow-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{pendingRequests.length}</p>
+                      <p className="text-xs text-gray-600">Permintaan Baru</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <BarChart3 className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{totalCases}</p>
+                      <p className="text-xs text-gray-600">Total Kasus</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-          {/* Jadwal Hari Ini */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Jadwal Hari Ini</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <p className="font-medium text-sm">Ahmad Fauzi</p>
-                  <p className="text-xs text-gray-600">10:00 - Konseling Pribadi</p>
-                </div>
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <p className="font-medium text-sm">Siti Nurhaliza</p>
-                  <p className="text-xs text-gray-600">14:00 - Konseling Sosial</p>
-                </div>
-                <div className="p-3 bg-purple-50 rounded-lg">
-                  <p className="font-medium text-sm">Budi Santoso</p>
-                  <p className="text-xs text-gray-600">16:00 - Konseling Karier</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Permintaan Layanan */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Permintaan Layanan Konseling</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {counselingRequests.slice(0, 5).map((request) => (
+                      <div key={request.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">{request.studentName}</p>
+                          <p className="text-sm text-gray-600">{request.studentClass} • {request.serviceType}</p>
+                          <p className="text-xs text-gray-500">
+                            {format(new Date(request.createdAt), 'dd MMM yyyy', { locale: id })}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            request.status === "menunggu" 
+                              ? "bg-yellow-100 text-yellow-800" 
+                              : request.status === "disetujui"
+                              ? "bg-green-100 text-green-800"
+                              : request.status === "ditolak"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}>
+                            {request.status}
+                          </span>
+                          {request.status === "menunggu" && (
+                            <div className="flex space-x-1">
+                              <Button size="sm" onClick={() => handleApproveRequest(request.id)}>
+                                Setujui
+                              </Button>
+                              <Button size="sm" variant="destructive" onClick={() => handleRejectRequest(request.id)}>
+                                Tolak
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {counselingRequests.length === 0 && (
+                      <p className="text-center text-gray-500 py-8">Belum ada permintaan konseling</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Jadwal Hari Ini */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Jadwal Hari Ini</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {activeSessions.slice(0, 3).map((session) => (
+                      <div key={session.id} className="p-3 bg-blue-50 rounded-lg">
+                        <p className="font-medium text-sm">{session.studentName}</p>
+                        <p className="text-xs text-gray-600">{session.scheduledTime} - {session.serviceType}</p>
+                        <p className="text-xs text-blue-600 capitalize">{session.status}</p>
+                      </div>
+                    ))}
+                    {activeSessions.length === 0 && (
+                      <p className="text-sm text-gray-500">Tidak ada jadwal hari ini</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="students">
+            <StudentManagement />
+          </TabsContent>
+
+          <TabsContent value="sessions">
+            <CounselingResults />
+          </TabsContent>
+
+          <TabsContent value="results">
+            <CounselingResults />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
