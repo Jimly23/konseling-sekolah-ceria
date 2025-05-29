@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,26 +7,33 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen, Heart, Users, TrendingUp, MessageCircle, Calendar, FileText, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { validateLogin } from "@/data/accounts";
+import { useNavigate } from "react-router-dom";
+import CounselingRequestForm from "@/components/CounselingRequestForm";
 
 const Index = () => {
   const [loginType, setLoginType] = useState<"siswa" | "guru" | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<"siswa" | "guru" | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleLogin = (username: string, password: string, role: "siswa" | "guru") => {
-    // Simulasi login
-    if (username && password) {
+    const user = validateLogin(username, password, role);
+    
+    if (user) {
       setIsLoggedIn(true);
       setUserRole(role);
+      setCurrentUser(user);
       toast({
         title: "Login Berhasil",
-        description: `Selamat datang, ${role === "siswa" ? "Siswa" : "Guru BK"}!`,
+        description: `Selamat datang, ${user.nama}!`,
       });
     } else {
       toast({
         title: "Login Gagal",
-        description: "Silakan masukkan username dan password yang valid",
+        description: "Username atau password salah. Coba: siswa1/password123 atau gurubk1/password123",
         variant: "destructive",
       });
     }
@@ -36,6 +42,7 @@ const Index = () => {
   const handleLogout = () => {
     setIsLoggedIn(false);
     setUserRole(null);
+    setCurrentUser(null);
     toast({
       title: "Logout Berhasil",
       description: "Anda telah keluar dari sistem",
@@ -43,7 +50,11 @@ const Index = () => {
   };
 
   if (isLoggedIn && userRole) {
-    return userRole === "siswa" ? <SiswaDashboard onLogout={handleLogout} /> : <GuruBKDashboard onLogout={handleLogout} />;
+    return userRole === "siswa" ? (
+      <SiswaDashboard onLogout={handleLogout} user={currentUser} navigate={navigate} />
+    ) : (
+      <GuruBKDashboard onLogout={handleLogout} user={currentUser} />
+    );
   }
 
   return (
@@ -89,6 +100,23 @@ const Index = () => {
                 Masuk sebagai Guru BK
               </Button>
             </LoginDialog>
+          </div>
+          
+          {/* Demo Accounts Info */}
+          <div className="mt-8 p-4 bg-white/60 rounded-lg max-w-2xl mx-auto">
+            <h3 className="font-semibold mb-2">Akun Demo:</h3>
+            <div className="grid md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="font-medium">Siswa:</p>
+                <p>Username: siswa1-siswa5</p>
+                <p>Password: password123</p>
+              </div>
+              <div>
+                <p className="font-medium">Guru BK:</p>
+                <p>Username: gurubk1-gurubk5</p>
+                <p>Password: password123</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -223,16 +251,16 @@ const LoginDialog = ({
   );
 };
 
-const SiswaDashboard = ({ onLogout }: { onLogout: () => void }) => {
+const SiswaDashboard = ({ onLogout, user, navigate }: { onLogout: () => void; user: any; navigate: any }) => {
   const [selectedService, setSelectedService] = useState<string>("");
   const { toast } = useToast();
 
   const handleServiceRequest = (serviceType: string) => {
     setSelectedService(serviceType);
-    toast({
-      title: "Permintaan Layanan Dikirim",
-      description: `Permintaan konseling ${serviceType} telah dikirim ke Guru BK`,
-    });
+  };
+
+  const handleMaterialClick = (materialId: string) => {
+    navigate(`/material/${materialId}`);
   };
 
   return (
@@ -240,7 +268,10 @@ const SiswaDashboard = ({ onLogout }: { onLogout: () => void }) => {
       <header className="bg-white/80 backdrop-blur-sm border-b border-blue-200">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-800">Dashboard Siswa</h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">Dashboard Siswa</h1>
+              <p className="text-sm text-gray-600">Selamat datang, {user.nama} - {user.kelas}</p>
+            </div>
             <Button onClick={onLogout} variant="outline">Logout</Button>
           </div>
         </div>
@@ -258,42 +289,41 @@ const SiswaDashboard = ({ onLogout }: { onLogout: () => void }) => {
             </CardHeader>
             <CardContent>
               <div className="grid sm:grid-cols-2 gap-4">
-                <Button 
-                  onClick={() => handleServiceRequest("Pribadi")}
-                  className="h-20 bg-gradient-to-br from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
-                >
-                  <div className="text-center">
-                    <Heart className="h-6 w-6 mx-auto mb-1" />
-                    <div>Konseling Pribadi</div>
-                  </div>
-                </Button>
-                <Button 
-                  onClick={() => handleServiceRequest("Sosial")}
-                  className="h-20 bg-gradient-to-br from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
-                >
-                  <div className="text-center">
-                    <Users className="h-6 w-6 mx-auto mb-1" />
-                    <div>Konseling Sosial</div>
-                  </div>
-                </Button>
-                <Button 
-                  onClick={() => handleServiceRequest("Belajar")}
-                  className="h-20 bg-gradient-to-br from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
-                >
-                  <div className="text-center">
-                    <BookOpen className="h-6 w-6 mx-auto mb-1" />
-                    <div>Konseling Belajar</div>
-                  </div>
-                </Button>
-                <Button 
-                  onClick={() => handleServiceRequest("Karier")}
-                  className="h-20 bg-gradient-to-br from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
-                >
-                  <div className="text-center">
-                    <TrendingUp className="h-6 w-6 mx-auto mb-1" />
-                    <div>Konseling Karier</div>
-                  </div>
-                </Button>
+                <CounselingRequestForm serviceType="Pribadi">
+                  <Button className="h-20 bg-gradient-to-br from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 w-full">
+                    <div className="text-center">
+                      <Heart className="h-6 w-6 mx-auto mb-1" />
+                      <div>Konseling Pribadi</div>
+                    </div>
+                  </Button>
+                </CounselingRequestForm>
+                
+                <CounselingRequestForm serviceType="Sosial">
+                  <Button className="h-20 bg-gradient-to-br from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 w-full">
+                    <div className="text-center">
+                      <Users className="h-6 w-6 mx-auto mb-1" />
+                      <div>Konseling Sosial</div>
+                    </div>
+                  </Button>
+                </CounselingRequestForm>
+                
+                <CounselingRequestForm serviceType="Belajar">
+                  <Button className="h-20 bg-gradient-to-br from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 w-full">
+                    <div className="text-center">
+                      <BookOpen className="h-6 w-6 mx-auto mb-1" />
+                      <div>Konseling Belajar</div>
+                    </div>
+                  </Button>
+                </CounselingRequestForm>
+                
+                <CounselingRequestForm serviceType="Karier">
+                  <Button className="h-20 bg-gradient-to-br from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 w-full">
+                    <div className="text-center">
+                      <TrendingUp className="h-6 w-6 mx-auto mb-1" />
+                      <div>Konseling Karier</div>
+                    </div>
+                  </Button>
+                </CounselingRequestForm>
               </div>
             </CardContent>
           </Card>
@@ -345,13 +375,25 @@ const SiswaDashboard = ({ onLogout }: { onLogout: () => void }) => {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <Button variant="ghost" className="w-full justify-start text-sm">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-sm"
+                  onClick={() => handleMaterialClick("manajemen-waktu")}
+                >
                   📚 Tips Manajemen Waktu
                 </Button>
-                <Button variant="ghost" className="w-full justify-start text-sm">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-sm"
+                  onClick={() => handleMaterialClick("minat-bakat")}
+                >
                   🎯 Menemukan Minat & Bakat
                 </Button>
-                <Button variant="ghost" className="w-full justify-start text-sm">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-sm"
+                  onClick={() => handleMaterialClick("kepercayaan-diri")}
+                >
                   💪 Membangun Kepercayaan Diri
                 </Button>
               </div>
@@ -368,10 +410,19 @@ const SiswaDashboard = ({ onLogout }: { onLogout: () => void }) => {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <Button className="w-full" size="sm">
+                <Button 
+                  className="w-full" 
+                  size="sm"
+                  onClick={() => navigate("/kuisioner-minat")}
+                >
                   Kuisioner Minat
                 </Button>
-                <Button className="w-full" size="sm" variant="outline">
+                <Button 
+                  className="w-full" 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => navigate("/tes-kepribadian")}
+                >
                   Tes Kepribadian
                 </Button>
               </div>
@@ -383,7 +434,7 @@ const SiswaDashboard = ({ onLogout }: { onLogout: () => void }) => {
   );
 };
 
-const GuruBKDashboard = ({ onLogout }: { onLogout: () => void }) => {
+const GuruBKDashboard = ({ onLogout, user }: { onLogout: () => void; user: any }) => {
   const [requests] = useState([
     { id: 1, nama: "Ahmad Fauzi", kelas: "XI IPA 1", jenis: "Pribadi", status: "Menunggu", tanggal: "2024-12-01" },
     { id: 2, nama: "Siti Nurhaliza", kelas: "X IPS 2", jenis: "Sosial", status: "Disetujui", tanggal: "2024-12-02" },
@@ -404,7 +455,10 @@ const GuruBKDashboard = ({ onLogout }: { onLogout: () => void }) => {
       <header className="bg-white/80 backdrop-blur-sm border-b border-blue-200">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-800">Dashboard Guru BK</h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">Dashboard Guru BK</h1>
+              <p className="text-sm text-gray-600">Selamat datang, {user.nama}</p>
+            </div>
             <Button onClick={onLogout} variant="outline">Logout</Button>
           </div>
         </div>
