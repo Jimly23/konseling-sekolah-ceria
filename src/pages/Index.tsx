@@ -1,7 +1,6 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Heart, Users, TrendingUp, Clock, ArrowRight } from "lucide-react";
+import { BookOpen, Heart, Users, TrendingUp, Clock, ArrowRight, Menu } from "lucide-react";
 import { Link } from "react-router-dom";
 import CounselingRequestForm from "@/components/CounselingRequestForm";
 
@@ -30,12 +29,19 @@ const articles = [
 ];
 
 const Index = () => {
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-blue-100">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-blue-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
                 <Heart className="h-6 w-6 text-white" />
@@ -45,12 +51,43 @@ const Index = () => {
                 <p className="text-sm text-gray-600">Bimbingan & Konseling</p>
               </div>
             </div>
+            
+            <nav className="hidden md:flex items-center space-x-6">
+              <button 
+                onClick={() => scrollToSection('hero')}
+                className="text-gray-600 hover:text-blue-600 transition-colors"
+              >
+                Beranda
+              </button>
+              <button 
+                onClick={() => scrollToSection('counseling')}
+                className="text-gray-600 hover:text-blue-600 transition-colors"
+              >
+                Layanan Konseling
+              </button>
+              <button 
+                onClick={() => scrollToSection('articles')}
+                className="text-gray-600 hover:text-blue-600 transition-colors"
+              >
+                Artikel
+              </button>
+              <Link to="/kuisioner-minat">
+                <Button variant="outline" size="sm">
+                  Kuisioner Minat
+                </Button>
+              </Link>
+              <Link to="/tes-kepribadian">
+                <Button variant="outline" size="sm">
+                  Tes Kepribadian
+                </Button>
+              </Link>
+            </nav>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4">
+      <section id="hero" className="py-20 px-4">
         <div className="container mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6">
             Layanan <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-green-600">Bimbingan & Konseling</span> Digital
@@ -62,7 +99,7 @@ const Index = () => {
       </section>
 
       {/* Counseling Request Section */}
-      <section className="py-16 px-4">
+      <section id="counseling" className="py-16 px-4">
         <div className="container mx-auto">
           <h3 className="text-3xl font-bold text-center text-gray-800 mb-12">Ajukan Layanan Konseling</h3>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
@@ -134,7 +171,7 @@ const Index = () => {
       </section>
 
       {/* Articles Section */}
-      <section className="py-16 px-4 bg-white/50">
+      <section id="articles" className="py-16 px-4 bg-white/50">
         <div className="container mx-auto">
           <h3 className="text-3xl font-bold text-center text-gray-800 mb-12">Artikel Terbaru</h3>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
