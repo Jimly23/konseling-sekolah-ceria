@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useApp } from "@/contexts/AppContext";
 import { format } from "date-fns";
 
 interface CounselingRequestFormProps {
@@ -16,9 +15,11 @@ interface CounselingRequestFormProps {
 }
 
 const CounselingRequestForm = ({ serviceType, children }: CounselingRequestFormProps) => {
-  const { currentUser, addCounselingRequest } = useApp();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
+    studentName: "",
+    studentClass: "",
+    phoneNumber: "",
     description: "",
     priority: "",
     preferredDate: "",
@@ -29,27 +30,42 @@ const CounselingRequestForm = ({ serviceType, children }: CounselingRequestFormP
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentUser || !('kelas' in currentUser)) return;
+    // Create WhatsApp message
+    const whatsappNumber = "082329322353";
+    const message = `*PERMINTAAN KONSELING ${serviceType.toUpperCase()}*
 
-    addCounselingRequest({
-      studentUsername: currentUser.username,
-      studentName: currentUser.nama,
-      studentClass: currentUser.kelas,
-      serviceType,
-      description: formData.description,
-      priority: formData.priority,
-      preferredDate: formData.preferredDate,
-      preferredTime: formData.preferredTime,
-      status: 'menunggu',
-    });
+*Data Siswa:*
+• Nama: ${formData.studentName}
+• Kelas: ${formData.studentClass}
+• No. HP: ${formData.phoneNumber}
+
+*Detail Konseling:*
+• Jenis: Konseling ${serviceType}
+• Prioritas: ${formData.priority}
+• Tanggal Pilihan: ${formData.preferredDate}
+• Waktu Pilihan: ${formData.preferredTime}
+
+*Deskripsi Masalah:*
+${formData.description}
+
+*Waktu Pengajuan:* ${format(new Date(), 'dd/MM/yyyy HH:mm')}`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+    
+    // Open WhatsApp
+    window.open(whatsappUrl, '_blank');
 
     toast({
-      title: "Permintaan Terkirim",
-      description: `Permintaan konseling ${serviceType.toLowerCase()} berhasil dikirim`,
+      title: "Permintaan Dikirim",
+      description: `Permintaan konseling ${serviceType.toLowerCase()} telah dikirim ke WhatsApp Guru BK`,
     });
 
     setOpen(false);
     setFormData({
+      studentName: "",
+      studentClass: "",
+      phoneNumber: "",
       description: "",
       priority: "",
       preferredDate: "",
@@ -69,10 +85,45 @@ const CounselingRequestForm = ({ serviceType, children }: CounselingRequestFormP
         <DialogHeader>
           <DialogTitle>Ajukan Konseling {serviceType}</DialogTitle>
           <DialogDescription>
-            Isi form berikut untuk mengajukan layanan konseling {serviceType.toLowerCase()}
+            Isi form berikut untuk mengajukan layanan konseling {serviceType.toLowerCase()}. Data akan dikirim langsung ke WhatsApp Guru BK.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="studentName">Nama Lengkap</Label>
+              <Input
+                id="studentName"
+                placeholder="Masukkan nama lengkap"
+                value={formData.studentName}
+                onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="studentClass">Kelas</Label>
+              <Input
+                id="studentClass"
+                placeholder="Contoh: XII IPA 1"
+                value={formData.studentClass}
+                onChange={(e) => setFormData({ ...formData, studentClass: e.target.value })}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="phoneNumber">Nomor HP/WhatsApp</Label>
+            <Input
+              id="phoneNumber"
+              placeholder="Contoh: 081234567890"
+              value={formData.phoneNumber}
+              onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+              required
+            />
+          </div>
+          
           <div>
             <Label htmlFor="description">Deskripsi Masalah</Label>
             <Textarea
@@ -134,7 +185,7 @@ const CounselingRequestForm = ({ serviceType, children }: CounselingRequestFormP
           </div>
 
           <Button type="submit" className="w-full">
-            Kirim Permintaan
+            Kirim ke WhatsApp Guru BK
           </Button>
         </form>
       </DialogContent>
