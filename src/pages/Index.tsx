@@ -1,7 +1,33 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Heart, Users, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BookOpen, Heart, Users, TrendingUp, Clock, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import CounselingRequestForm from "@/components/CounselingRequestForm";
+
+const articles = [
+  {
+    id: "manajemen-waktu",
+    title: "Tips Manajemen Waktu untuk Siswa",
+    excerpt: "Pelajari cara mengelola waktu dengan efektif untuk meningkatkan produktivitas belajar dan mengurangi stres.",
+    readTime: "5 menit",
+    category: "Belajar"
+  },
+  {
+    id: "minat-bakat",
+    title: "Cara Menemukan Minat dan Bakat",
+    excerpt: "Panduan lengkap untuk mengidentifikasi minat dan bakat yang dapat membantu merencanakan masa depan.",
+    readTime: "7 menit",
+    category: "Karier"
+  },
+  {
+    id: "kepercayaan-diri",
+    title: "Membangun Kepercayaan Diri di Sekolah",
+    excerpt: "Strategi praktis untuk meningkatkan rasa percaya diri dalam berinteraksi dan belajar di lingkungan sekolah.",
+    readTime: "6 menit",
+    category: "Pribadi"
+  }
+];
 
 const Index = () => {
   return (
@@ -103,6 +129,42 @@ const Index = () => {
                 </CardContent>
               </Card>
             </CounselingRequestForm>
+          </div>
+        </div>
+      </section>
+
+      {/* Articles Section */}
+      <section className="py-16 px-4 bg-white/50">
+        <div className="container mx-auto">
+          <h3 className="text-3xl font-bold text-center text-gray-800 mb-12">Artikel Terbaru</h3>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {articles.map((article) => (
+              <Card key={article.id} className="hover:shadow-lg transition-shadow duration-300">
+                <CardHeader>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                      {article.category}
+                    </span>
+                    <div className="flex items-center text-gray-500 text-sm">
+                      <Clock className="h-4 w-4 mr-1" />
+                      {article.readTime}
+                    </div>
+                  </div>
+                  <CardTitle className="text-lg leading-tight">{article.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-gray-600 mb-4 line-clamp-3">
+                    {article.excerpt}
+                  </CardDescription>
+                  <Link to={`/article/${article.id}`}>
+                    <Button variant="outline" className="w-full group">
+                      Baca Selengkapnya
+                      <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>

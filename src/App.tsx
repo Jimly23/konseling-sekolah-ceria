@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import KuisionerMinat from "./pages/KuisionerMinat";
 import TesKepribadian from "./pages/TesKepribadian";
 import MaterialDetail from "./pages/MaterialDetail";
+import ArticleDetail from "./pages/ArticleDetail";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/kuisioner-minat" element={<KuisionerMinat />} />
           <Route path="/tes-kepribadian" element={<TesKepribadian />} />
           <Route path="/material/:id" element={<MaterialDetail />} />
+          <Route path="/article/:id" element={<ArticleDetail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
