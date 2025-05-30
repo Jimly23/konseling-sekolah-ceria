@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Heart, Users, TrendingUp, Clock, ArrowRight, Menu } from "lucide-react";
+import { BookOpen, Heart, Users, TrendingUp, Clock, ArrowRight, Menu, Brain, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 import CounselingRequestForm from "@/components/CounselingRequestForm";
 
@@ -66,21 +66,17 @@ const Index = () => {
                 Layanan Konseling
               </button>
               <button 
+                onClick={() => scrollToSection('assessment')}
+                className="text-gray-600 hover:text-blue-600 transition-colors"
+              >
+                Asesmen
+              </button>
+              <button 
                 onClick={() => scrollToSection('articles')}
                 className="text-gray-600 hover:text-blue-600 transition-colors"
               >
                 Artikel
               </button>
-              <Link to="/kuisioner-minat">
-                <Button variant="outline" size="sm">
-                  Kuisioner Minat
-                </Button>
-              </Link>
-              <Link to="/tes-kepribadian">
-                <Button variant="outline" size="sm">
-                  Tes Kepribadian
-                </Button>
-              </Link>
             </nav>
           </div>
         </div>
@@ -166,6 +162,55 @@ const Index = () => {
                 </CardContent>
               </Card>
             </CounselingRequestForm>
+          </div>
+        </div>
+      </section>
+
+      {/* Assessment Tools Section */}
+      <section id="assessment" className="py-16 px-4 bg-gradient-to-r from-indigo-50 to-purple-50">
+        <div className="container mx-auto">
+          <h3 className="text-3xl font-bold text-center text-gray-800 mb-6">Asesmen & Evaluasi</h3>
+          <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
+            Kenali potensi diri dengan mengikuti asesmen minat dan kepribadian untuk membantu perencanaan masa depan
+          </p>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <Card className="hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+              <CardHeader className="text-center">
+                <div className="w-16 h-16 rounded-full bg-white/20 mx-auto mb-4 flex items-center justify-center">
+                  <Target className="h-8 w-8" />
+                </div>
+                <CardTitle className="text-xl">Kuisioner Minat</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center">
+                <CardDescription className="text-white/90 mb-6">
+                  Temukan minat dan bakat yang sesuai dengan kepribadian untuk membantu menentukan jurusan dan karier
+                </CardDescription>
+                <Link to="/kuisioner-minat">
+                  <Button variant="secondary" className="w-full">
+                    Mulai Kuisioner
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow duration-300 bg-gradient-to-br from-purple-500 to-pink-600 text-white">
+              <CardHeader className="text-center">
+                <div className="w-16 h-16 rounded-full bg-white/20 mx-auto mb-4 flex items-center justify-center">
+                  <Brain className="h-8 w-8" />
+                </div>
+                <CardTitle className="text-xl">Tes Kepribadian</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center">
+                <CardDescription className="text-white/90 mb-6">
+                  Pahami karakteristik dan tipe kepribadian untuk mengoptimalkan potensi dan hubungan sosial
+                </CardDescription>
+                <Link to="/tes-kepribadian">
+                  <Button variant="secondary" className="w-full">
+                    Mulai Tes
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
